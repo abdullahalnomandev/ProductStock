@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Category } from '../category/category.model';
+import { productSearchableFields } from './product.cconst';
 import { IProduct } from './product.interface';
 import { Product } from './product.model';
 import { generateProductCode } from './product.utils';
 
+// CREATE PRODUCT
 const createProduct = async (payload: IProduct): Promise<IProduct> => {
   const { name, category: categoryId } = payload;
 
@@ -18,16 +20,26 @@ const createProduct = async (payload: IProduct): Promise<IProduct> => {
   return newProduct;
 };
 
-const getProducts = async (filters: any): Promise<IProduct[]> => {
-  const { searchTerm, category } = filters;
+const getProducts = async (
+  filters: any,
+  paginationOptions: any
+): Promise<{
+  meta: { page: number; limit: number; total: number };
+  data: IProduct[];
+}> => {
+  const { searchTerm, category, ...filtersData } = filters;
   const andConditions = [];
 
+  // Handle search term filtering
   if (searchTerm) {
     andConditions.push({
-      $or: [{ name: { $regex: searchTerm, $options: 'i' } }],
+      $or: productSearchableFields.map(field => ({
+        [field]: { $regex: searchTerm, $options: 'i' },
+      })),
     });
   }
 
+  // Handle additional filters
   if (category) {
     const existingCategory = await Category.findOne({ name: category });
     if (!existingCategory) {
@@ -36,19 +48,40 @@ const getProducts = async (filters: any): Promise<IProduct[]> => {
     andConditions.push({ category: existingCategory._id });
   }
 
+  if (Object.keys(filtersData).length > 0) {
+    andConditions.push({
+      $and: Object.entries(filtersData).map(([field, value]) => ({
+        [field]: value,
+      })),
+    });
+  }
+
+  // Extract pagination details
+  const { page, limit, skip } = paginationOptions;
+
+  // Query products with filters and pagination
   const whereConditions =
     andConditions.length > 0 ? { $and: andConditions } : {};
+  const products = await Product.find(whereConditions)
+    .skip(skip)
+    .limit(limit)
+    .populate('category');
 
-  const products = await Product.find(whereConditions).populate('category');
+  // Get total product count
+  const total = await Product.countDocuments(whereConditions);
 
-  return products.map(product => {
-    const originalPrice = product.price;
-    const finalPrice =
-      product.price - (product.price * (product.discount || 0)) / 100;
-    return { ...product.toObject(), originalPrice, finalPrice };
-  });
+  return {
+    meta: { page, limit, total },
+    data: products.map(product => {
+      const originalPrice = product.price;
+      const finalPrice =
+        product.price - (product.price * (product.discount || 0)) / 100;
+      return { ...product.toObject(), originalPrice, finalPrice };
+    }),
+  };
 };
 
+// UPDATE PRODUCT
 const updateProduct = async (
   id: string,
   payload: Partial<IProduct>
@@ -68,6 +101,7 @@ const updateProduct = async (
   return updatedProduct;
 };
 
+// DELETE PRODUCT
 const deleteProduct = async (id: string): Promise<IProduct | null> => {
   const deletedProduct = await Product.findByIdAndDelete(id).populate(
     'category'
