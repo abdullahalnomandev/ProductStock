@@ -1,19 +1,28 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Application } from 'express';
-import { CategoryRoutes } from './app/modules/category/category.route';
-import { ProductRoutes } from './app/modules/product/product.route';
+import express, { Application, Request, Response } from 'express';
+import globalErrorHandler from './app/middlewares/globalErrorhandler';
+import notFound from './app/middlewares/notFound';
+import router from './app/routes';
 
 const app: Application = express();
 
-app.use(cors());
+//parsers
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.get('/', async (req, res) => {
-  res.status(200).send('Welcome to the Product Management API!');
+app.use(cors({ origin: '*', credentials: true }));
+
+// application routes
+app.use('/api/v1', router);
+
+app.get('/', (_: Request, res: Response) => {
+  res.send('Server is running...');
 });
 
-app.use('/api/v1/products', ProductRoutes);
-app.use('/api/v1/categories', CategoryRoutes);
+app.use(globalErrorHandler);
+
+//Not Found
+app.use(notFound);
 
 export default app;

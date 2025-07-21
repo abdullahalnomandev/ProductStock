@@ -23,7 +23,12 @@ const createProductZodSchema = z.object({
         required_error: 'Image URL is required',
       })
       .url('Invalid image URL'),
-    status: z.enum(['stock_out', 'in_stock']).default('in_stock').optional(),
+    status: z.enum(['in_stock', 'out_of_stock']).default('in_stock').optional(),
+    productCode: z
+      .string({
+        required_error: 'Product code is required',
+      })
+      .optional(),
     category: z.string({
       required_error: 'Category ID is required',
     }),
@@ -39,8 +44,9 @@ const updateProductZodSchema = z.object({
         .min(0, 'Discount cannot be negative')
         .max(100, 'Discount cannot exceed 100')
         .optional(),
-      status: z.enum(['stock_out', 'in_stock']).optional(),
+      status: z.enum(['in_stock', 'out_of_stock']).optional(),
       category: z.string().optional(),
+      productCode: z.string().optional(),
     })
     .partial(),
 });

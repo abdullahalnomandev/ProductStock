@@ -25,14 +25,22 @@ graph TD
 How to Run and Organize
 
 1. Clone the repository and navigate to the project directory.
-2. Install the dependencies using:
+2. Install the dependencies using one of the following package managers:
    ```
    npm install
    ```
+   or
+   ```
+   yarn install
+   ```
 3. Set up your environment variables in a `.env` file based on the `example.env` provided.
-4. To run the application in development mode, use:
+4. To run the application in development mode, use one of the following commands:
    ```
    npm run dev
+   ```
+   or
+   ```
+   yarn run dev
    ```
 5. Implement the Products with Filters feature, which includes the following methods to retrieve products:
    - **Filter by Category**: Fetch products belonging to a specific category.

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Category } from '../category/category.model';
 import { IProduct } from './product.interface';
 import { Product } from './product.model';
